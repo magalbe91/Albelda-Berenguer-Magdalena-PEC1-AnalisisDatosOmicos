@@ -191,7 +191,7 @@ In this repository, you will find the following files:
 
   - **`metabolites_data.tsv`**: Metabolomic data from Kang et al. (2018), which investigated fecal microbial metabolites in children with Autism Spectrum Disorder (ASD) and neurotypical children.  
   The dataset was obtained from [The Curated Gut Microbiome Metabolome Data Resource](https://github.com/borenstein-lab/microbiome-metabolome-curated-data).
-  - **`metadata_samples.tsv`**: Sample metadata, also obtained from [The Curated Gut Microbiome Metabolome Data Resource](https://github.com/borenstein-lab/microbiome-metabolome-curated-data).
+  - **`metadata.tsv`**: Sample metadata, also obtained from [The Curated Gut Microbiome Metabolome Data Resource](https://github.com/borenstein-lab/microbiome-metabolome-curated-data).
   - **`codigo_analisis.R`**: Contains the code used to process the data, create the SummarizedExperiment object, and perform data analysis.
   - **`Informe.Rmd`**: A detailed report describing data selection, processing, analysis, and interpretation of results.
   - **`summarized_experiment_kang_data.rda`**: The SummarizedExperiment object created from the dataset.
