@@ -13,25 +13,6 @@ In this repository, you will find the following files:
 
 ---
   
-#### **Study Information**
-**Original Study**: 
-
-  - **Authors**: Dae-Wook Kang, Zehra Esra Ilhan, Nancy G. Isern, David W. Hoyt, Daniel P. Howsmon, Michael Shaffer, Catherine A. Lozupone, Juergen Hahn, James B. Adams, Rosa Krajmalnik-Brown  
-  - **Title**: Differences in fecal microbial metabolites and microbiota of children with autism spectrum disorders 
-  - **Journal**: Anaerobe  
-  - **Year**: 2018  
-  - **DOI**: 10.1016/j.anaerobe.2017.12.007
-
-**Curated Data Source**: 
-
-  - **Authors**: Efrat Muller, Yadid M. Algavi, and Elhanan Borenstein  
-  - **Title**: The gut microbiome-metabolome dataset collection: a curated resource for integrative meta-analysis
-  - **Journal**: NPJ Biofilms and Microbiomes  
-  - **Year**: 2022  
-  - **DOI**: 10.1038/s41522-022-00345-5  
-
----
-  
 #### **Dataset Description**
 
 ###### **Metabolites Data (`metabolites_data.tsv`)**

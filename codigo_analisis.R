@@ -173,12 +173,6 @@ top_pc2 <- loadings_df[order(abs(loadings_df$PC2_Loading), decreasing = TRUE), ]
 head(top_pc1[, "PC1_Loading", drop = FALSE], 10)
 head(top_pc2[, "PC2_Loading", drop = FALSE], 10)
 
-
-
-
-
-
-
 # Archivos de texto ----
 # Guardamos la matriz de datos metabolicos en formato texto
 write.table(assay(se), file = "metabolites_data.tsv", sep = "\t", quote = FALSE, col.names = NA)
@@ -190,42 +184,23 @@ write.table(cbind(Sample = rownames(colData(se)), as.data.frame(colData(se))),
 # Marckdown ----
 # Desrrollamos el archivo Markdown explicativo
 markdown_text <- "
-## **PEC1 - Analisis de Datos Omicos**
+### **PEC1 - Analisis de Datos Omicos**
 
-### **Introduction**
+#### **Introduction**
 In this repository, you will find the following files:
 
+  - **`metabolites_data.tsv`**: Metabolomic data from Kang et al. (2018), which investigated fecal microbial metabolites in children with Autism Spectrum Disorder (ASD) and neurotypical children.  
+  The dataset was obtained from [The Curated Gut Microbiome Metabolome Data Resource](https://github.com/borenstein-lab/microbiome-metabolome-curated-data).
+  - **`metadata_samples.tsv`**: Sample metadata, also obtained from [The Curated Gut Microbiome Metabolome Data Resource](https://github.com/borenstein-lab/microbiome-metabolome-curated-data).
   - **`codigo_analisis.R`**: Contains the code used to process the data, create the SummarizedExperiment object, and perform data analysis.
   - **`Informe.Rmd`**: A detailed report describing data selection, processing, analysis, and interpretation of results.
   - **`summarized_experiment_kang_data.rda`**: The SummarizedExperiment object created from the dataset.
-  - **`metabolites_data.tsv`**: Metabolomic data from Kang et al. (2018), which investigated fecal microbial metabolites in children with Autism Spectrum Disorder (ASD) and neurotypical children.  
-  - The dataset was obtained from [The Curated Gut Microbiome Metabolome Data Resource](https://github.com/borenstein-lab/microbiome-metabolome-curated-data).
-  - **`metadata_samples.tsv`**: Sample metadata, also obtained from [The Curated Gut Microbiome Metabolome Data Resource](https://github.com/borenstein-lab/microbiome-metabolome-curated-data).
 
 ---
   
-### **Study Information**
-**Original Study**: 
+#### **Dataset Description**
 
-  - **Authors**: Dae-Wook Kang, Zehra Esra Ilhan, Nancy G. Isern, David W. Hoyt, Daniel P. Howsmon, Michael Shaffer, Catherine A. Lozupone, Juergen Hahn, James B. Adams, Rosa Krajmalnik-Brown  
-  - **Title**: Differences in fecal microbial metabolites and microbiota of children with autism spectrum disorders 
-  - **Journal**: Anaerobe  
-  - **Year**: 2018  
-  - **DOI**: 10.1016/j.anaerobe.2017.12.007
-
-**Curated Data Source**: 
-
-  - **Authors**: Efrat Muller, Yadid M. Algavi, and Elhanan Borenstein  
-  - **Title**: The gut microbiome-metabolome dataset collection: a curated resource for integrative meta-analysis
-  - **Journal**: NPJ Biofilms and Microbiomes  
-  - **Year**: 2022  
-  - **DOI**: 10.1038/s41522-022-00345-5  
-
----
-  
-### **Dataset Description**
-
-##### **Metabolites Data (`metabolites_data.tsv`)**
+###### **Metabolites Data (`metabolites_data.tsv`)**
 - **Format**: Tab-separated values (.tsv).
 - **Rows**: 61 metabolites and stool parameters (e.g., pH).
 - **Columns**: 44 samples (subjects).
@@ -234,7 +209,7 @@ In this repository, you will find the following files:
 This dataset contains metabolomic profiles derived from targeted 1H-NMR analysis of fecal samples.
 Each row represents a metabolite or stool parameter, and each column corresponds to a sample.
 
-##### **Sample Metadata (`metadata.tsv`)**
+###### **Sample Metadata (`metadata.tsv`)**
 - **Format**: Tab-separated values (.tsv).
 - **Rows**: 44 samples (subjects).
 - **Columns**: Metadata variables.
