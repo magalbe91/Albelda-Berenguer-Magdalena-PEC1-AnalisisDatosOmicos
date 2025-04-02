@@ -16,10 +16,6 @@ head(metadata)
 metabolites <- read_tsv("~/Desktop/UOC_Master/Asignaturas/Semestre 2/1- Analisis de datos omicos/PEC1/Data microbiome/data/processed_data/KANG_AUTISM_2017/mtb.tsv")
 head(metabolites)
 
-# Extra: Abundancia relativa de generos bacterianos
-genera <- read_tsv("~/Desktop/UOC_Master/Asignaturas/Semestre 2/1- Analisis de datos omicos/PEC1/Data microbiome/data/processed_data/KANG_AUTISM_2017/genera.tsv")
-head(genera)
-
 # SummarizedExperiment ----
 library(SummarizedExperiment)
 
@@ -46,17 +42,17 @@ colData_df <- metadata %>%
   column_to_rownames("Sample")
 
 # Convertimos a DataFrame
-colData_df <- DataFrame(colData_df)
+colData_DF <- DataFrame(colData_df)
 
 # 3- rowData: ----
 # DataFrame con nombres de los metabolitos
-rowData_df <- DataFrame(Metabolite = rownames(metabolites_matrix))
+rowData_DF <- DataFrame(Metabolite = rownames(metabolites_matrix))
 
 # 4- SummarizedExperiment: ----
 # Creamos el SummarizedExperiment
 se <- SummarizedExperiment(assays = assay_list,
-                           colData = colData_df,
-                           rowData = rowData_df)
+                           colData = colData_DF,
+                           rowData = rowData_DF)
 
 # 5- Añadir informacion del estudio 
 metadata(se) <- list(Researcher = "Kang, Dae-Wook, et al.",
@@ -68,8 +64,8 @@ metadata(se) <- list(Researcher = "Kang, Dae-Wook, et al.",
                      Subjects_Information = "21 neurotypical children; 23 children with Autism Spectrum Disorders (ASD), age between 4 to 17 years old",
                      Samples_Information = "Fecal samples from the 44 subjects",
                      Metabolomics_Approach = "Targeted, 1H-NMR metabolite data",
-                     Metabolites_Unit = "μmole per g-dry stool",
-                     Date_Download = "https://github.com/borenstein-lab/microbiome-metabolome-curated-data?tab=readme-ov-file")
+                     Metabolites_Unit = "μmol per g-dry stool",
+                     Data_Download = "https://github.com/borenstein-lab/microbiome-metabolome-curated-data?tab=readme-ov-file")
 
 # Visualizamos que todo este correcto
 se # todo el SummarizedExperiment
@@ -78,20 +74,24 @@ head(colData(se)) # metadata de cada muestra
 head(rowData(se)) # metabolitos
 metadata(se) # informacion del estudio
 
+
 # Archivo .rda ----
 save(se, file = "summarized_experiment_kang_data.rda")
 
-# Analisis exploratorio ----
-# 1- Resumen estadístico de metabolitos
-summary(t(assay(se))) 
 
-# 2- Visualización de todos los metabolitos por grupo (Neurotypical vs ASD)
+# Analisis exploratorio ----
+# 1- Resumen estadístico de metabolitos ----
+stats <- summary(t(assay(se))) 
+stats
+write.csv(stats, file = "stats_result.csv")
+
+# 2- Visualización de todos los metabolitos por grupo (Neurotypical vs ASD) ----
 library(reshape2)
 library(ggplot2)
 
-# Transformamos la estructura de la matriz
+# Extraemos los datos del SummarizedExperiment y transformamos la estructura de la matriz
 metabolites_long <- melt(assay(se)) 
-colnames(metabolites_long) <- c("Metabolite", "Sample", "Concentration") # nombramos las columnas de la nueva tabla
+colnames(metabolites_long) <- c("Metabolite", "Sample", "Concentration") # nombramos las columnas del nuevo dataframe
 metabolites_long <- merge(metabolites_long, colData(se), by.x = "Sample", by.y = "row.names") # añadimos el metadata
 metabolites_long_filtered <- as.data.frame(metabolites_long) %>%
   filter(!Metabolite %in% c("pH", "DSS-d6 (Chemical Shape Indicator)")) # eliminamos columnas que no son metabolitos a estudiar
@@ -102,33 +102,62 @@ ggplot(metabolites_long_filtered,
   geom_boxplot() +
   facet_wrap(~ Metabolite, scales = "free") +
   labs(title = "Metabolites per Study Group",
-       y = "μmole metabolite per g-dry stool") +
+       y = "μmol / g-dry stool") +
   theme_minimal() +
-  theme(legend.position = "none") 
+  theme(legend.position = "none",
+        axis.title.x=element_blank()) 
 
-# 3- PCA
-# Extraemos la matriz de metabolitos del SummarizedExperiment
+ggsave("metabolites_boxplot.png", bg = "white", width = 13, height = 9, dpi = 300)
+
+# Wilcoxon test ----
+# Calculamos diferencias significativas de cada metabolito entre los grupos de estudio
+# Realizamos el test de Shapiro-Wilk para evaluar la normalidad antes de aplicar el test de Wilcoxon 
+shapiro_results <- metabolites_long_filtered %>%
+  group_by(Metabolite) %>%
+  summarise(
+    # Verificamos si la concentración tiene más de un valor único antes de aplicar el Shapiro-Wilk
+    p_value_shapiro = ifelse(length(unique(Concentration)) > 1,
+                             shapiro.test(Concentration)$p.value,
+                             NA)  # Asignamos NA si todos los valores son iguales
+  )
+
+# Mostramos los p-value del Shapiro-Wilk
+head(shapiro_results)
+
+# Los datos no siguen una distribución normal: Realizamos el test de Wilcoxon sin exactitud
+wilcoxon_results <- metabolites_long_filtered %>%
+  group_by(Metabolite) %>%
+  summarise(p_value = wilcox.test(Concentration ~ Study.Group, exact = FALSE)$p.value)
+
+# Aplicamos el ajuste de Benjamini-Hochberg a los valores p
+wilcoxon_results$adjusted_p_value <- p.adjust(wilcoxon_results$p_value, method = "BH")
+
+# Mostramos los p-value de Wilcoxon y ajustados
+head(wilcoxon_results)
+
+write.csv(wilcoxon_results, file = "wilcoxon_results.csv")
+
+
+# 3- PCA ----
+# Extraemos de nuevo la matriz de metabolitos del SummarizedExperiment
 metabolites_matrix <- assay(se)
 
 # Filtramos los datos de la matriz
-# Eliminamos datos que no corresponden a metabolitos
-metabolites_matrix_filtered <- metabolites_matrix[!rownames(metabolites_matrix) %in% c("pH", "DSS-d6 (Chemical Shape Indicator)"), ]
-# Buscamos si hay valores NA (y filtramos si hay)
-sum(is.na(metabolites_matrix_filtered))
-# Eliminamos metabolitos no detectados (valor = 0, para todas las muestras)
-zero_variance_columns <- apply(metabolites_matrix_filtered, 1, var) == 0 # buscamos los metabolitos que tengan una varianza 0
-metabolites_matrix_filtered_no_zero_variance <- metabolites_matrix_filtered[!zero_variance_columns, ] # eliminamos los metabolitos de la matriz
+sum(is.na(metabolites_matrix)) # buscamos si hay valores NA (y filtramos si hay)
+metabolites_matrix_filtered <- metabolites_matrix[!rownames(metabolites_matrix) %in% 
+                                                    c("pH", "DSS-d6 (Chemical Shape Indicator)"), ] # eliminamos datos que no corresponden a metabolitos
+metabolites_matrix_filtered <- metabolites_matrix_filtered[rowSums(metabolites_matrix_filtered > 0) > 3, ] # eliminamos metabolitos no detectados (valor = 0, para todas las muestras) y metabolitos detectados solo en hasta 3 muestras
 
-# Transponemos la matriz de metabolitos (para que coincida con la organizacion de los metadatos)
-t_metabolites_matrix <- t(metabolites_matrix_filtered_no_zero_variance)
+# Transponemos la matriz de metabolitos (Obtenemos: muestras en filas vs metabolitos en columnas)
+t_metabolites <- t(metabolites_matrix_filtered)
 
 # Normalizamos los datos
-metabolites_centered <- scale(t_metabolites_matrix, 
+t_metabolites_centered <- scale(t_metabolites, 
                               center = TRUE, # datos centrados (matriz de covarianzas)
                               scale = FALSE) # datos en la misma unidad (no escalamos)
 
 # Realizamos la PCA
-pca_result <- prcomp(metabolites_centered)
+pca_result <- prcomp(t_metabolites_centered)
 summary(pca_result)
 
 # Visualizamos los resultados
@@ -146,17 +175,16 @@ pca_df <- data.frame(PC1 = pca_result$x[, 1], PC2 = pca_result$x[, 2],
 
 # Hacemos el grafico 
 ggplot(pca_df, 
-       aes(x = PC1, y = PC2, 
-           color = StudyGroup)) +
+       aes(x = PC1, y = PC2, color = StudyGroup)) +
   geom_point(size = 3) +
-  geom_text(aes(label = rownames(pca_df)), 
-            vjust = -0.5, size = 3) +
-  stat_ellipse(aes(group = StudyGroup), 
-               level = 0.95, linetype = 2, size = 1) +
-  labs(title = "PCA Metabolites per Study Group",
+  geom_text(aes(label = rownames(pca_df)), vjust = -0.8, size = 3) +
+  stat_ellipse(aes(group = StudyGroup), level = 0.95, linetype = 2, linewidth = 0.5) +
+  labs(title = "PCA",
        x = paste("PC1 (", round(explained_variance[1], 2), "%)", sep = ""),
        y = paste("PC2 (", round(explained_variance[2], 2), "%)", sep = "")) +
   theme_minimal()
+
+ggsave("pca_plot.png", bg = "white", width = 8, height = 5, dpi = 300)
 
 # Que metabolitos afectan más a los dos primeros PCs?
 # Obtenemos los vectores de carga (loadings) para cada PC
@@ -173,6 +201,71 @@ top_pc2 <- loadings_df[order(abs(loadings_df$PC2_Loading), decreasing = TRUE), ]
 head(top_pc1[, "PC1_Loading", drop = FALSE], 10)
 head(top_pc2[, "PC2_Loading", drop = FALSE], 10)
 
+
+# 4- Clustering ----
+library(pheatmap)
+
+# A) Agrupamos los metabolitos segun los grupos de estudio (Autistic vs Neurotypical)
+# Escalamos la matriz filtrada (esta vez centramos y escalamos)
+# Trasponemos para escalar y luego transponemos otra vez para mantener los metabolitos en las filas
+metabolites_scaled <- t(scale(t(metabolites_matrix_filtered), center = TRUE, scale = TRUE))
+
+# Ordenamos las muestras según el grupo de estudio
+ordered_samples <- rownames(colData(se))[order(colData(se)$Study.Group)]
+metabolites_scaled_ordered <- metabolites_scaled[, match(ordered_samples, colnames(metabolites_scaled))]
+
+# Cambiamos el nombre de la anotación
+# Creamos la anotación con el mismo orden que ordered_samples
+annotation_col <- data.frame(Study_Group = colData(se)$Study.Group[match(ordered_samples, colnames(se))])
+rownames(annotation_col) <- ordered_samples
+
+# Visualizamos el mediante un heatmap como se agrupan los metabolitos segun el grupo de estudio
+heatmap_plot <- pheatmap(metabolites_scaled_ordered, 
+                         annotation_col = annotation_col, 
+                         show_rownames = TRUE,  
+                         show_colnames = TRUE,
+                         fontsize_row = 6,  
+                         cluster_cols = FALSE,  
+                         clustering_distance_rows = "euclidean",
+                         clustering_method = "ward.D2",
+                         main = "Heatmap - Metabolites per Study Group")
+
+# Usamos ggsave() para guardarlo
+library(gridExtra)
+ggsave("metabolites_heatmap.png", plot = heatmap_plot[[4]], width = 8, height = 6, dpi = 300)
+
+# B) Agrupamos los sujetos del estudio 
+# Calculamos la distancia entre sujetos (sobre la matriz escalada)
+distancia_muestras <- dist(t(metabolites_scaled))
+
+# Realizamos el clustering jerárquico usando el método de Ward
+clustering <- hclust(distancia_muestras, method="ward.D2")
+
+# Visualizamos el dendrograma (y guardamos la imagen)
+png("dendrograma_clustering.png", width = 800, height = 600, res = 100, bg = "white")
+
+plot(clustering, main = "Hierarchical Clustering Dendrogram")
+
+dev.off()
+
+
+# 5- Correlacion ----
+# Calculamos la correlación entre los metabolitos (utilizamos la matriz filtrada)
+cor_matrix <- cor(t_metabolites)
+head(cor_matrix)
+
+# Visualizar la matriz de correlación como un mapa de calor
+correlation_plot <- pheatmap(cor_matrix, 
+                             cluster_rows = TRUE,
+                             cluster_cols = TRUE,
+                             clustering_distance_rows = "euclidean",
+                             clustering_method = "ward.D2",
+                             main = "Heatmap - Correlation Metabolites")
+
+# Usamos ggsave() para guardarlo
+ggsave("correlation_heatmap.png", plot = correlation_plot[[4]], width = 9, height = 9, dpi = 300)
+
+
 # Archivos de texto ----
 # Guardamos la matriz de datos metabolicos en formato texto
 write.table(assay(se), file = "metabolites_data.tsv", sep = "\t", quote = FALSE, col.names = NA)
@@ -180,6 +273,7 @@ write.table(assay(se), file = "metabolites_data.tsv", sep = "\t", quote = FALSE,
 # Guardamos el metadata de las muestras
 write.table(cbind(Sample = rownames(colData(se)), as.data.frame(colData(se))), 
             file = "metadata.tsv", sep = "\t", quote = FALSE, row.names = FALSE)
+
 
 # Marckdown ----
 # Desrrollamos el archivo Markdown explicativo
@@ -193,7 +287,7 @@ In this repository, you will find the following files:
   The dataset was obtained from [The Curated Gut Microbiome Metabolome Data Resource](https://github.com/borenstein-lab/microbiome-metabolome-curated-data).
   - **`metadata.tsv`**: Sample metadata, also obtained from [The Curated Gut Microbiome Metabolome Data Resource](https://github.com/borenstein-lab/microbiome-metabolome-curated-data).
   - **`codigo_analisis.R`**: Contains the code used to process the data, create the SummarizedExperiment object, and perform data analysis.
-  - **`Informe.Rmd`**: A detailed report describing data selection, processing, analysis, and interpretation of results.
+  - **`Informe.pdf`**: A detailed report describing data selection, processing, analysis, and interpretation of results.
   - **`summarized_experiment_kang_data.rda`**: The SummarizedExperiment object created from the dataset.
 
 ---
@@ -204,7 +298,7 @@ In this repository, you will find the following files:
 - **Format**: Tab-separated values (.tsv).
 - **Rows**: 61 metabolites and stool parameters (e.g., pH).
 - **Columns**: 44 samples (subjects).
-- **Values**: Metabolite concentrations (μmole per gram of dry stool).
+- **Values**: Metabolite concentrations (μmol per gram of dry stool).
 
 This dataset contains metabolomic profiles derived from targeted 1H-NMR analysis of fecal samples.
 Each row represents a metabolite or stool parameter, and each column corresponds to a sample.

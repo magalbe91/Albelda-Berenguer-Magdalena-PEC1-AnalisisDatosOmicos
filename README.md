@@ -8,7 +8,7 @@ In this repository, you will find the following files:
   The dataset was obtained from [The Curated Gut Microbiome Metabolome Data Resource](https://github.com/borenstein-lab/microbiome-metabolome-curated-data).
   - **`metadata.tsv`**: Sample metadata, also obtained from [The Curated Gut Microbiome Metabolome Data Resource](https://github.com/borenstein-lab/microbiome-metabolome-curated-data).
   - **`codigo_analisis.R`**: Contains the code used to process the data, create the SummarizedExperiment object, and perform data analysis.
-  - **`Informe.Rmd`**: A detailed report describing data selection, processing, analysis, and interpretation of results.
+  - **`Informe.pdf`**: A detailed report describing data selection, processing, analysis, and interpretation of results.
   - **`summarized_experiment_kang_data.rda`**: The SummarizedExperiment object created from the dataset.
 
 ---
@@ -19,7 +19,7 @@ In this repository, you will find the following files:
 - **Format**: Tab-separated values (.tsv).
 - **Rows**: 61 metabolites and stool parameters (e.g., pH).
 - **Columns**: 44 samples (subjects).
-- **Values**: Metabolite concentrations (μmole per gram of dry stool).
+- **Values**: Metabolite concentrations (μmol per gram of dry stool).
 
 This dataset contains metabolomic profiles derived from targeted 1H-NMR analysis of fecal samples.
 Each row represents a metabolite or stool parameter, and each column corresponds to a sample.
