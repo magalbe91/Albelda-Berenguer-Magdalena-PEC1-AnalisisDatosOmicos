@@ -275,7 +275,7 @@ write.table(cbind(Sample = rownames(colData(se)), as.data.frame(colData(se))),
             file = "metadata.tsv", sep = "\t", quote = FALSE, row.names = FALSE)
 
 
-# Marckdown ----
+# Markdown ----
 # Desrrollamos el archivo Markdown explicativo
 markdown_text <- "
 ### **PEC1 - Analisis de Datos Omicos**
